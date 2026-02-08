@@ -379,22 +379,6 @@ pip install numpy pandas matplotlib
 - Requires Python 3.7+ (uses dataclasses, type hints)
 
 ---
-
-## Citation
-
-If you use this simulation framework in your research, please cite:
-
-```bibtex
-@inproceedings{kumar2025leangossip,
-  title={Lean Gossip: Big Gains From Small Talk},
-  author={Kumar, Ankit and Manolios, Panagiotis},
-  booktitle={Distributed and Event-Based Systems (DEBS)},
-  year={2025}
-}
-```
-
----
-
 ## Troubleshooting
 
 ### Issue: "No convergence" warnings during sweep
