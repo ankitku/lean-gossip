@@ -1,5 +1,7 @@
 \begin{table}[t]
       \centering
+      \small
+      \renewcommand{\arraystretch}{0.85}
       \caption{Effect of gossip degree for $D{=}8$ (worst-case across churn regimes).
             Minimal gossip ($\Dlazy{=}1$) captures most reliability benefit at
             a fraction of the cost.}
@@ -8,11 +10,11 @@
             \toprule
             $\Dlazy$ & Delivery & Cost ($\beta/P$) & Cost vs.\ $\Dlazy{=}1$ \\
             \midrule
-             1 & 96.9\% & 17$\times$ & 1$\times$ \\
-             3 & 97.6\% & 120$\times$ & 7$\times$ \\
-             5 & 98.6\% & 190$\times$ & 11$\times$ \\
-             9 & 98.4\% & 219$\times$ & 13$\times$ \\
-            13 & 98.8\% & 236$\times$ & 14$\times$ \\
+            1        & 98.8\%   & 85$\times$       & 1$\times$              \\
+            3        & 99.5\%   & 180$\times$      & 2$\times$              \\
+            5        & 99.3\%   & 181$\times$      & 2$\times$              \\
+            9        & 99.5\%   & 178$\times$      & 2$\times$              \\
+            13       & 99.6\%   & 189$\times$      & 2$\times$              \\
             \bottomrule
       \end{tabular}
 \end{table}

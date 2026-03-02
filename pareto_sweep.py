@@ -34,14 +34,15 @@ def run_single_config(D, D_lazy, churny_fraction, seed=42):
     Run single configuration with specified seed.
     Returns dict with metrics.
     """
-    # Set seeds for reproducibility
-    random.seed(seed)
-    np.random.seed(seed)
-    
-    # Create simulator (suppress output)
+    # Create simulator (suppress output).
+    # The seed is passed directly into MeshSubComplete so that topology
+    # initialisation, region assignment, and the full run all use it —
+    # previously random.seed() was called here but then overridden inside
+    # __init__ with a hardcoded 42, making every "independent" seed run
+    # identical.
     import io
     import contextlib
-    
+
     with contextlib.redirect_stdout(io.StringIO()):
         sim = MeshSubComplete(
             num_peers=1000,
@@ -60,6 +61,7 @@ def run_single_config(D, D_lazy, churny_fraction, seed=42):
             churny_rejoin_rate=0.05,
             region_names=[],      # Disable regions (uniform delays)
             region_fractions=[],  # Disable regions (uniform delays)
+            seed=seed,            # Bug fix: pass seed so __init__ doesn't hardcode 42
         )
         
         # Run with warmup
@@ -74,11 +76,15 @@ def run_single_config(D, D_lazy, churny_fraction, seed=42):
     num_messages = stats['total_origin']
     delivery_rate = stats['delivery_mean']  # = mean(|R_m| / |V|) over all messages
     total_bytes = stats['total_bytes']
-    
+
     # Bytes per successful delivery: β = B_total / sum_m |R_m|
-    # Since delivery_rate = mean(|R_m|/|V|), we have sum_m |R_m| ≈ num_messages * |V| * delivery_rate
-    total_deliveries = num_messages * num_peers * delivery_rate
-    bytes_per_delivery = total_bytes / total_deliveries if total_deliveries > 0 else float('inf')
+    # Bug fix: use the exact per-message delivery count tracked by the
+    # latency tracker (sum_m |R_m|) rather than the approximation
+    # num_messages * num_peers * delivery_rate, which diverges from the
+    # true sum whenever per-message delivery rates vary across messages
+    # (which they do under churn).
+    total_deliveries_exact = latency['total_deliveries'] if latency else 0
+    bytes_per_delivery = total_bytes / total_deliveries_exact if total_deliveries_exact > 0 else float('inf')
     
     result = {
         'D': D,
@@ -187,8 +193,8 @@ def main():
         churny_values = [0.0, 0.2]
     else:
         D_values = [2,4,6,8,10,12,14]
-        D_lazy_values = [1,3,5,7,9,11,13,15,17,19,21,23]
-        churny_values = [0, 0.1, 0.2, 0.3, 0.4]
+        D_lazy_values = [1,3,5,7,9,11,13,15,17,19,21]
+        churny_values = [0, 0.1, 0.2, 0.3]
 
     configs = list(itertools.product(D_values, D_lazy_values, churny_values))
     

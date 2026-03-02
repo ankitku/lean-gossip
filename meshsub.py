@@ -223,9 +223,15 @@ class MeshSubComplete:
         # Geographic regions (default: 3 regions, 30% EU, 40% US, 30% Asia)
         region_names: Optional[List[str]] = None,
         region_fractions: Optional[List[float]] = None,
+
+        # Random seed for reproducibility (None = do not set)
+        seed: Optional[int] = None,
     ):
-        random.seed(42)
-        np.random.seed(42)  # For reproducible region assignment
+        # Bug fix: use caller-supplied seed instead of hardcoded 42,
+        # so that multi-seed sweeps produce genuinely independent runs.
+        if seed is not None:
+            random.seed(seed)
+            np.random.seed(seed)
         
         self.num_peers = int(num_peers)
         self.tick_sec = float(tick_sec)
@@ -612,7 +618,12 @@ class MeshSubComplete:
                     )
             
             # Recompute lazy mesh (non-eager peers)
+            # Bug fix: shuffle before slicing so lazy peers are chosen randomly
+            # each heartbeat rather than always picking the same set from
+            # unordered set iteration, which biased gossip toward the same
+            # (potentially offline) peers every round.
             rest = [n for n in p.peer_table if n not in p.mesh_eager and self.online.get(n, False)]
+            random.shuffle(rest)
             p.mesh_lazy = set(rest[:min(len(rest), self.D_lazy)])
     
     def send_accounting(self):
