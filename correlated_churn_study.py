@@ -2,9 +2,9 @@
 """
 correlated_churn_study.py
 
-Correlated churn experiment for Lean Gossip paper rebuttal.
+Correlated churn experiment for Lean Gossip.
 
-This script addresses Reviewer 3's concern (W3) about correlated churn:
+This script addresses concern about correlated churn:
 "Correlated churn would simultaneously damage both the eager mesh and the 
 gossip recovery chain that Lean Gossip relies on."
 
