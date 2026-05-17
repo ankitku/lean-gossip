@@ -9,6 +9,9 @@ Confidence intervals show the spread (std) across the other parameter dimension:
 
 Updated to dynamically use available D values from the results CSV,
 handling incomplete experimental data gracefully.
+
+Outputs vector PDF figures with embedded TrueType fonts (pdf.fonttype=42)
+for crisp rendering in LaTeX documents.
 """
 
 import numpy as np
@@ -20,7 +23,27 @@ import os
 # Configuration
 # ============================================================
 
-# Default DPI (can be overridden by command line)
+# Embed TrueType fonts (not Type 3 bitmaps) in PDF output so text stays
+# selectable, searchable, and crisp at any zoom. Most publishers also
+# require Type 42 / TrueType rather than Type 3.
+plt.rcParams['pdf.fonttype'] = 42
+plt.rcParams['ps.fonttype'] = 42
+
+# Font sizes — tuned for figures embedded in a LaTeX paper at \linewidth.
+# Override individual elements with explicit fontsize= kwargs if needed.
+plt.rcParams.update({
+    'font.size':       13,   # base size
+    'axes.titlesize':  14,   # subplot titles (a), (b), (c)
+    'axes.labelsize':  13,   # x/y axis labels
+    'xtick.labelsize': 12,
+    'ytick.labelsize': 12,
+    'legend.fontsize': 11,
+    'legend.title_fontsize': 12,
+})
+
+# Default DPI (can be overridden by command line).
+# For vector PDF output this only affects any rasterized elements
+# (we have none), but matplotlib still accepts the kwarg.
 DPI = 300
 
 # Message payload size in bytes (aggregated attestation)
@@ -368,7 +391,7 @@ def plot_D_by_churn(df, outpath):
         # Add FloodSub reference annotation
         axes[0].annotate(f'FloodSub\nreference\n($D$={FLOODSUB_D}, $D_{{lazy}}$={FLOODSUB_D_LAZY})',
                         xy=(x_flood, 0.75), xytext=(x_flood - 1, 0.55),
-                        fontsize=8, ha='right', va='top',
+                        fontsize=10, ha='right', va='top',
                         bbox=dict(boxstyle='round,pad=0.3', facecolor='lightyellow',
                                  edgecolor='gray', alpha=0.9))
     else:
@@ -386,7 +409,7 @@ def plot_D_by_churn(df, outpath):
     if delivery_ylim[0] < 0.9 < delivery_ylim[1]:
         axes[0].axhline(0.9, ls="--", lw=0.8, color="gray", alpha=0.7)
     axes[0].set_title("(a) Delivery rate vs mesh degree $D$ (bars: range over $D_{lazy}$)")
-    axes[0].legend(loc="lower right", fontsize=9)
+    axes[0].legend(loc="lower right", fontsize=11)
     
     axes[1].set_ylabel(r"Normalized cost ($\beta / P$)")
     axes[1].set_yscale("log")
@@ -568,7 +591,7 @@ def plot_Dlazy_by_churn(df, outpath):
         
         axes[0].annotate(f'FloodSub\nreference\n($D$={FLOODSUB_D}, $D_{{lazy}}$={FLOODSUB_D_LAZY})', 
                         xy=(x_flood, 0.75), xytext=(x_flood - 1, 0.55),
-                        fontsize=8, ha='right', va='top',
+                        fontsize=10, ha='right', va='top',
                         bbox=dict(boxstyle='round,pad=0.3', facecolor='lightyellow', 
                                  edgecolor='gray', alpha=0.9))
     else:
@@ -584,7 +607,7 @@ def plot_Dlazy_by_churn(df, outpath):
     if delivery_ylim[0] < 0.9 < delivery_ylim[1]:
         axes[0].axhline(0.9, ls="--", lw=0.8, color="gray", alpha=0.7)
     axes[0].set_title("(a) Delivery rate vs gossip degree $D_{lazy}$ (bars: range over $D$)")
-    axes[0].legend(loc="lower right", fontsize=9)
+    axes[0].legend(loc="lower right", fontsize=11)
     
     axes[1].set_ylabel(r"Normalized cost ($\beta / P$)")
     axes[1].set_yscale("log")
@@ -671,7 +694,7 @@ def plot_D_fixed_Dlazy(df, dlazy_val, outpath):
     if 8 in available_D or (min(available_D) < 8 < max(available_D)):
         axes[0].axvline(8, ls=":", lw=1, color="darkred", alpha=0.7, label="Ethereum $D=8$")
     axes[0].set_title(f"(a) Delivery rate vs $D$ (fixed $D_{{lazy}}={dlazy_val}$)")
-    axes[0].legend(loc="lower right", fontsize=9)
+    axes[0].legend(loc="lower right", fontsize=11)
     
     axes[1].set_ylabel(r"Normalized cost ($\beta / P$)")
     axes[1].set_yscale("log")
@@ -760,7 +783,7 @@ def plot_Dlazy_fixed_D(df, d_val, outpath):
     if delivery_ylim[0] < 0.9 < delivery_ylim[1]:
         axes[0].axhline(0.9, ls="--", lw=0.8, color="gray", alpha=0.7)
     axes[0].set_title(f"(a) Delivery rate vs $D_{{lazy}}$ (fixed $D={d_val}$)")
-    axes[0].legend(loc="lower right", fontsize=9)
+    axes[0].legend(loc="lower right", fontsize=11)
     
     axes[1].set_ylabel(r"Normalized cost ($\beta / P$)")
     axes[1].set_yscale("log")
@@ -796,7 +819,8 @@ def main():
     parser.add_argument('output_dir', nargs='?', default='plots',
                         help='Output directory for plots (default: plots)')
     parser.add_argument('--dpi', type=int, default=300,
-                        help='DPI for output plots (default: 300)')
+                        help='DPI for output plots (default: 300, only affects '
+                             'any rasterized elements in the PDF)')
     parser.add_argument('--fixed-dlazy', type=int, default=None,
                         help='Fixed D_lazy value for D sweep plot (default: auto-detect)')
     parser.add_argument('--fixed-d', type=int, default=None,
@@ -818,8 +842,8 @@ def main():
     available_D_lazy = sorted(df[df["D_lazy"] != FLOODSUB_D_LAZY]["D_lazy"].unique())
     
     # General plots (aggregated across the other parameter)
-    plot_D_by_churn(df, f"{args.output_dir}/fig_D_by_churn.png")
-    plot_Dlazy_by_churn(df, f"{args.output_dir}/fig_Dlazy_by_churn.png")
+    plot_D_by_churn(df, f"{args.output_dir}/fig_D_by_churn.pdf")
+    plot_Dlazy_by_churn(df, f"{args.output_dir}/fig_Dlazy_by_churn.pdf")
     
     # Fixed parameter plots
     # Use command line args if provided, otherwise use smart defaults
@@ -850,11 +874,11 @@ def main():
     
     if fixed_dlazy is not None:
         plot_D_fixed_Dlazy(df, dlazy_val=fixed_dlazy, 
-                          outpath=f"{args.output_dir}/fig_D_fixed_Dlazy{fixed_dlazy}.png")
+                          outpath=f"{args.output_dir}/fig_D_fixed_Dlazy{fixed_dlazy}.pdf")
     
     if fixed_d is not None:
         plot_Dlazy_fixed_D(df, d_val=fixed_d, 
-                          outpath=f"{args.output_dir}/fig_Dlazy_fixed_D{fixed_d}.png")
+                          outpath=f"{args.output_dir}/fig_Dlazy_fixed_D{fixed_d}.pdf")
     
     print(f"\n[OK] All churn regime plots generated in {args.output_dir}/")
 

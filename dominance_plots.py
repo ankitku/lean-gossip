@@ -7,6 +7,7 @@ Key improvements:
 2. Emphasis on D_lazy=1 configurations (paper's main finding)
 3. Better visual hierarchy
 4. Clearer latency-cost-delivery tradeoff story
+5. PDF output with TrueType font embedding for LaTeX / crisp rendering
 """
 
 import os
@@ -82,7 +83,17 @@ def plot_pareto_dominance(df, outpath):
     pareto_mask = compute_2d_pareto(gossip_agg, 'min_delivery', 'normalized_cost')
     
     # Create figure
-    fig, ax = plt.subplots(figsize=(12, 8))
+    # pdf.fonttype=42 embeds TrueType fonts (not Type 3), so text stays
+    # selectable/searchable in the PDF and renders crisply at any zoom.
+    # ps.fonttype mirrored for consistency if anyone uses PS output.
+    plt.rcParams.update({
+        'font.size': 14,
+        'axes.titlesize': 16,
+        'axes.labelsize': 14,
+        'pdf.fonttype': 42,
+        'ps.fonttype': 42,
+    })
+    fig, ax = plt.subplots(figsize=(16, 10))
     
     # --- Red shaded region: inferior to FloodSub ---
     # Points with BOTH higher cost AND lower delivery are strictly dominated
@@ -163,7 +174,7 @@ def plot_pareto_dominance(df, outpath):
             f"{eth_row['normalized_cost']:.0f}× cost",
             xy=(eth_row['normalized_cost'], eth_row['min_delivery']),
             xytext=(130, 0.975),
-            fontsize=9, ha='left', va='top',
+            fontsize=13, ha='left', va='top',
             arrowprops=dict(arrowstyle='->', color='#00C853', lw=1.5,
                            connectionstyle='arc3,rad=-0.2'),
             bbox=dict(boxstyle='round,pad=0.5', facecolor='#E8F5E9',
@@ -185,7 +196,7 @@ def plot_pareto_dominance(df, outpath):
             f"({ratio:.1f}× cheaper, same latency, dominates Ethereum)",
             xy=(dom_row['normalized_cost'], dom_row['min_delivery']),
             xytext=(70, 0.990),
-            fontsize=9, ha='left', va='top',
+            fontsize=13, ha='left', va='top',
             arrowprops=dict(arrowstyle='->', color='#2E7D32', lw=1.5,
                            connectionstyle='arc3,rad=-0.2'),
             bbox=dict(boxstyle='round,pad=0.5', facecolor='#F1F8E9',
@@ -209,7 +220,7 @@ def plot_pareto_dominance(df, outpath):
             f"({ratio:.0f}× savings vs FloodSub)",
             xy=(best_d1['normalized_cost'], best_d1['min_delivery']),
             xytext=(25, 0.985),
-            fontsize=9, ha='left', va='top',
+            fontsize=13, ha='left', va='top',
             arrowprops=dict(arrowstyle='->', color='#1565C0', lw=1.5,
                            connectionstyle='arc3,rad=0.2'),
             bbox=dict(boxstyle='round,pad=0.5', facecolor='#E3F2FD',
@@ -226,8 +237,8 @@ def plot_pareto_dominance(df, outpath):
         f"{flood_latency:.1f}s p99 (fastest)",
         xy=(flood_cost, flood_delivery),
         xytext=(75, 0.972),
-        fontsize=9, ha='left', va='top',
-        arrowprops=dict(arrowstyle='->', color='#D32F2F', lw=1.5,
+            fontsize=13, ha='left', va='top',
+            arrowprops=dict(arrowstyle='->', color='#D32F2F', lw=1.5,
                        connectionstyle='arc3,rad=0.2'),
         bbox=dict(boxstyle='round,pad=0.5', facecolor='#FFEBEE',
                  edgecolor='#D32F2F', alpha=0.95),
@@ -242,18 +253,18 @@ def plot_pareto_dominance(df, outpath):
     )
     props = dict(boxstyle='round,pad=0.6', facecolor='lightyellow', 
                 edgecolor='#FFA000', alpha=0.95)
-    ax.text(0.02, 0.02, insight_text, transform=ax.transAxes, fontsize=9,
+    ax.text(0.02, 0.10, insight_text, transform=ax.transAxes, fontsize=13,
            verticalalignment='bottom', bbox=props, zorder=30)
     
     # --- Axis settings ---
     ax.set_xlim(0, 200)
     ax.set_ylim(0.945, 1.005)
     
-    ax.set_xlabel(r'Normalized bandwidth cost ($\beta / P$) — lower is better →', fontsize=11)
-    ax.set_ylabel('← higher is better — Worst-case delivery rate', fontsize=11)
+    ax.set_xlabel(r'Normalized bandwidth cost ($\beta / P$) — lower is better →')
+    ax.set_ylabel('← higher is better — Worst-case delivery rate')
     ax.set_title('GossipSub Dominates FloodSub: Delivery vs. Bandwidth Cost\n'
                  '(churn = 20%, each point is a single $(D, D_{lazy})$ configuration)',
-                 fontsize=13, fontweight='bold', pad=15)
+                 fontweight='bold', pad=15)
     
     # Grid
     ax.grid(True, alpha=0.25, linestyle='-', linewidth=0.5, zorder=0)
@@ -298,19 +309,19 @@ def plot_pareto_dominance(df, outpath):
                markersize=9, label='p99 > 20s'),
     ]
     
-    leg1 = ax.legend(handles=config_handles, loc='upper right', fontsize=8,
-                    framealpha=0.95, title='Configuration', title_fontsize=9,
-                    borderpad=0.8, bbox_to_anchor=(1.0, 0.50),
-                    alignment='left', handletextpad=0.5,
-                    labelspacing=0.3)
+    leg1 = ax.legend(handles=config_handles, loc='upper right', fontsize=12,
+                    framealpha=0.95, title='Configuration', title_fontsize=13,
+                    borderpad=1.0, bbox_to_anchor=(1.0, 0.70),
+                    alignment='left', handletextpad=0.8,
+                    labelspacing=0.8)
     leg1.get_frame().set_linewidth(0.8)
     ax.add_artist(leg1)
 
-    leg2 = ax.legend(handles=latency_handles, loc='upper right', fontsize=8,
-             framealpha=0.95, title='Marker Shape = Latency', title_fontsize=9,
-             borderpad=0.8, bbox_to_anchor=(1.0, 0.20),
-             alignment='left', handletextpad=0.5,
-             labelspacing=0.3)
+    leg2 = ax.legend(handles=latency_handles, loc='upper right', fontsize=12,
+             framealpha=0.95, title='Marker Shape = Latency', title_fontsize=13,
+             borderpad=1.0, bbox_to_anchor=(1.0, 0.25),
+             alignment='left', handletextpad=0.8,
+             labelspacing=0.8)
     leg2.get_frame().set_linewidth(0.8)
 
     # Match legend widths after drawing
@@ -325,7 +336,9 @@ def plot_pareto_dominance(df, outpath):
         leg2.get_title().set_ha('left')
     leg1.get_title().set_ha('left')
     
-    plt.savefig(outpath, dpi=300, bbox_inches='tight')
+    # PDF is vector — DPI doesn't matter for shapes/text. bbox_inches='tight'
+    # trims whitespace around the figure.
+    plt.savefig(outpath, format='pdf', bbox_inches='tight')
     plt.close()
     
     print(f"[OK] Saved: {outpath}")
@@ -359,15 +372,13 @@ def main():
                         help='Input CSV file (default: pareto_results.csv)')
     parser.add_argument('output_dir', nargs='?', default='plots',
                         help='Output directory for plots (default: plots)')
-    parser.add_argument('--dpi', type=int, default=300,
-                        help='DPI for output plots (default: 300)')
     args = parser.parse_args()
     
     df = pd.read_csv(args.input_csv)
     print(f"Loaded {len(df)} rows from {args.input_csv}")
     
     os.makedirs(args.output_dir, exist_ok=True)
-    plot_pareto_dominance(df, f'{args.output_dir}/fig_pareto_dominance.png')
+    plot_pareto_dominance(df, f'{args.output_dir}/fig_pareto_dominance.pdf')
 
 
 if __name__ == '__main__':

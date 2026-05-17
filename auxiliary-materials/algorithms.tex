@@ -330,40 +330,40 @@ configuration from strictly dominating Floodsub, obscuring the clear
 delivery-cost advantage of Gossipsub. Latency is instead encoded as marker
 shape for visual inspection.
 
-For the dominance plot, we aggregate simulation results to worst-case metrics
-across churn regimes using Algorithm~\ref{alg:aggregate}.
+For the dominance plot, we fix the churn level at $c = 0.2$, the
+empirically grounded value from Kiffer~\etal, and extract metrics
+directly for each $(D, \Dlazy)$ configuration using
+Algorithm~\ref{alg:aggregate}.
 
 \begin{algorithm}[H]
-\caption{Worst-Case Aggregation Across Churn Regimes}
+\caption{Filter Results at Fixed Churn Level ($c = 0.2$)}
 \label{alg:aggregate}
 \begin{algorithmic}[1]
 \Require Raw results $\mathcal{R} = \{(D, \Dlazy, c, \bar{\delta}, \beta_{\mathit{norm}}, \mathit{p99})\}$ for all configurations
-\Ensure Aggregated results $\mathcal{A}$
+\Ensure Filtered results $\mathcal{A}$ at $c = 0.2$
 \State $\mathcal{A} \gets \emptyset$
-\ForAll{unique $(D, \Dlazy)$ pairs in $\mathcal{R}$}
-    \State $\mathcal{R}_{D,\Dlazy} \gets \{r \in \mathcal{R} : r.D = D \land r.\Dlazy = \Dlazy\}$
-    \State $\delta^* \gets \min_{r \in \mathcal{R}_{D,\Dlazy}} r.\bar{\delta}$ \Comment{Worst (minimum) delivery}
-    \State $\beta^*_{\mathit{norm}} \gets \max_{r \in \mathcal{R}_{D,\Dlazy}} r.\beta_{\mathit{norm}}$ \Comment{Worst (maximum) cost}
-    \State $\ell^* \gets \max_{r \in \mathcal{R}_{D,\Dlazy}} r.\mathit{p99}$ \Comment{Worst (maximum) latency}
-    \State $\mathcal{A} \gets \mathcal{A} \cup \{(D, \Dlazy, \delta^*, \beta^*_{\mathit{norm}}, \ell^*)\}$
+\ForAll{$r \in \mathcal{R}$}
+    \If{$r.c = 0.2$}
+        \State $\mathcal{A} \gets \mathcal{A} \cup \{(r.D,\; r.\Dlazy,\; r.\bar{\delta},\; r.\beta_{\mathit{norm}},\; r.\mathit{p99})\}$
+    \EndIf
 \EndFor
 \State \Return $\mathcal{A}$
 \end{algorithmic}
 \end{algorithm}
 
 Algorithm~\ref{alg:pareto} computes the 2D Pareto frontier over delivery rate and cost.
-Latency ($\ell^*$) is retained in the aggregated results for visualization but
+Latency is retained in $\mathcal{A}$ for visualization but
 is not used in the dominance check.
 
 \begin{algorithm}[H]
 \caption{Compute 2D Pareto Frontier}
 \label{alg:pareto}
 \begin{algorithmic}[1]
-\Require Aggregated results $\mathcal{A} = \{(D, \Dlazy, \delta^*, \beta^*_{\mathit{norm}}, \ell^*)\}$
+\Require Filtered results $\mathcal{A} = \{(D, \Dlazy, \bar{\delta}, \beta_{\mathit{norm}}, \mathit{p99})\}$ at $c=0.2$
 \Ensure Pareto-optimal set $\mathcal{P} \subseteq \mathcal{A}$
 \Function{Dominates}{$A$, $B$} \Comment{Does $A$ dominate $B$ on delivery rate and cost?}
-    \State \Return $(\delta^*_A \geq \delta^*_B) \land (\beta^*_{\mathit{norm},A} \leq \beta^*_{\mathit{norm},B})$
-    \Statex \hspace{\algorithmicindent} $\land \; \bigl((\delta^*_A > \delta^*_B) \lor (\beta^*_{\mathit{norm},A} < \beta^*_{\mathit{norm},B})\bigr)$
+    \State \Return $(\bar{\delta}_A \geq \bar{\delta}_B) \land ({\beta_{\mathit{norm},A}} \leq {\beta_{\mathit{norm},B}})$
+    \Statex \hspace{\algorithmicindent} $\land \; \bigl((\bar{\delta}_A > \bar{\delta}_B) \lor ({\beta_{\mathit{norm},A}} < {\beta_{\mathit{norm},B}})\bigr)$
 \EndFunction
 \State $\mathcal{P} \gets \mathcal{A}$
 \ForAll{$A \in \mathcal{A}$}
